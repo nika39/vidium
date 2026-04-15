@@ -1,0 +1,66 @@
+server {
+    listen  80;
+    server_name ${SERVER_NAME};
+
+    return  301 https://$host:443$request_uri;
+}
+
+server {
+    listen  443 ssl;
+    server_name ${SERVER_NAME};
+
+    # Self signed certificates!
+    ssl_certificate     /etc/nginx/certs/server.pem;
+    ssl_certificate_key /etc/nginx/certs/server.key;
+
+    http2 on;
+
+    root /var/www/html/public;
+
+    # Healthcheck (for Docker healthcheck and load balancer probes)
+    location = /health {
+        access_log off;
+        return 200 'OK';
+    }
+
+    # API routes → Laravel Octane (Swoole HTTP server)
+    location /api/ {
+        proxy_pass         http://app:8000;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $http_host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
+    location / {
+        try_files $uri @webapp;
+    }
+
+    location @webapp {
+        proxy_pass         http://app:80;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $http_host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
+    # Proxy PHP files to Laravel Sail if requested directly
+    location ~ \.php$ {
+        proxy_pass         http://app:80;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $http_host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    # Block dot-files except Let's Encrypt
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}

@@ -1,0 +1,12 @@
+/.phpunit.cache
+/bootstrap/ssr
+/node_modules
+/vendor
+/public/build
+/public/hot
+/public/storage
+.DS_Store
+/.github
+/.git
+/.docker
+/.vscode
