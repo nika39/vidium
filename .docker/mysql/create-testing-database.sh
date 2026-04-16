@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
-mysql --user=root --password="$MYSQL_ROOT_PASSWORD" <<-EOSQL
-    CREATE DATABASE IF NOT EXISTS testing;
-EOSQL
-
 if [ -n "$MYSQL_USER" ]; then
-mysql --user=root --password="$MYSQL_ROOT_PASSWORD" <<-EOSQL
-    GRANT ALL PRIVILEGES ON \`testing%\`.* TO '$MYSQL_USER'@'%';
+    mysql --user=root --password="$MYSQL_ROOT_PASSWORD" <<-EOSQL
+CREATE DATABASE IF NOT EXISTS testing;
+CREATE USER IF NOT EXISTS '$MYSQL_USER'@'%' IDENTIFIED BY '$MYSQL_PASSWORD';
+GRANT ALL PRIVILEGES ON \`testing%\`.* TO '$MYSQL_USER'@'%';
+GRANT ALL PRIVILEGES ON \`$MYSQL_DATABASE\`.* TO '$MYSQL_USER'@'%';
 EOSQL
 fi
