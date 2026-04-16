@@ -30,4 +30,9 @@ class Site extends Model
     {
         return $this->hasMany(Metric::class);
     }
+
+    public function isValid(): bool
+    {
+        return $this->is_active && $this->expires_at->isFuture();
+    }
 }
