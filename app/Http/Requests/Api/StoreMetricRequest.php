@@ -21,11 +21,15 @@ class StoreMetricRequest extends FormRequest
      */
     public function rules(): array
     {
+        $maxVideoBitrateMbps = config('metrics.max_video_bitrate_mbps');
+        $pingInterval = config('metrics.ping_interval_seconds');
+        $maxBytes = ($maxVideoBitrateMbps / 8) * $pingInterval * 1024 * 1024;
+
         return [
             'license_key' => ['required', 'string', 'max:255'],
 
-            'p2p_bytes' => ['required', 'integer', 'min:0'],
-            'http_bytes' => ['required', 'integer', 'min:0'],
+            'p2p_bytes' => ['required', 'integer', 'min:0', "max:{$maxBytes}"],
+            'http_bytes' => ['required', 'integer', 'min:0', "max:{$maxBytes}"],
 
             'browser' => ['nullable', 'string', 'max:50'],
             'os' => ['nullable', 'string', 'max:50'],
@@ -36,7 +40,7 @@ class StoreMetricRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'p2p_bytes'  => $this->input('p2p_bytes', 0),
+            'p2p_bytes' => $this->input('p2p_bytes', 0),
             'http_bytes' => $this->input('http_bytes', 0),
 
             'browser' => $this->input('browser') ? trim($this->input('browser')) : 'Unknown',
