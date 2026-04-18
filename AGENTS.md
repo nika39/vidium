@@ -1,9 +1,17 @@
 <laravel-boost-guidelines>
 === foundation rules ===
 
-# Laravel Boost Guidelines
+# Project Goal and Overview
 
-The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.
+The project is a B2B analytics platform designed for clients (websites) utilizing P2P video streaming technology. The primary objective of the system is to ingest, process, and display accurate, real-time statistics of saved traffic (P2P vs. HTTP) to clients under high-load conditions, ensuring minimal server resource consumption.
+
+## Data Ingestion Pipeline
+
+The system implements a Thin Controller, Fat Service architectural pattern. The HTTP controller delegates the payload to the MetricIngestionService.
+
+- Incoming data is never written directly to MySQL.
+- A time-bound unique key (Time Bucket) is generated, containing the dimensions: Site ID, Hour, Browser, OS, Player Version.
+- The system uses Redis::pipeline() to execute multiple operations in a single network round-trip: hincrby: Atomically adds the incoming bytes and ping counts to the existing Hash. sadd: Appends the unique key to an active metrics list (a Redis Set), which is subsequently used by the background synchronizer.
 
 ## Foundational Context
 
