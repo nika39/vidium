@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Metric;
+use App\Models\Site;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redis;
@@ -49,6 +50,20 @@ class MetricSyncService
                 'os' => $parts[4],
                 'player_version' => $parts[5],
             ];
+        }
+
+        if (! empty($recordsToUpsert)) {
+            $siteIds = array_unique(array_column($recordsToUpsert, 'site_id'));
+            $validSiteIds = Site::query()->whereIn('id', $siteIds)->pluck('id')->all();
+
+            foreach (array_diff($siteIds, $validSiteIds) as $orphanedSiteId) {
+                Log::warning("Skipping metrics for non-existent site ID: {$orphanedSiteId}");
+            }
+
+            $recordsToUpsert = array_values(array_filter(
+                $recordsToUpsert,
+                fn (array $record) => in_array($record['site_id'], $validSiteIds)
+            ));
         }
 
         if (! empty($recordsToUpsert)) {
