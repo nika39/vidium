@@ -1,50 +1,50 @@
+x-app: &app-base
+    build:
+        context: .
+        dockerfile: .docker/app-prod/Dockerfile
+    image: ghcr.io/nika39/vidium:dev
+    depends_on:
+        - redis
+        - mysql
+    networks:
+        - sail
+    restart: unless-stopped
+
 services:
     app:
-        build:
-            context: .
-            dockerfile: .docker/app/Dockerfile
-        image: laravel:1.0-php8.5
+        <<: *app-base
         volumes:
             - app-public:/var/www/html/public
-        depends_on:
-            - redis
-            - mysql
-        networks:
-            - app
 
     app-octane:
-        build:
-            context: .
-            dockerfile: .docker/app/Dockerfile
-        image: laravel:1.0-php8.5
+        <<: *app-base
         command: php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000 --workers=auto
-        depends_on:
-            - redis
-            - mysql
-        networks:
-            - app
 
     web:
         build:
             context: .docker/nginx
         ports:
             - '80:80'
+            - '443:443'
+        environment:
+            - SERVER_NAME=${SERVER_NAME:-vidium.localhost}
+            - SSL_DOMAIN=${SSL_DOMAIN:-vidium.localhost}
+            - SSL_ALT_NAME=${SSL_ALT_NAME:-DNS:vidium.localhost}
         volumes:
             - app-public:/var/www/html/public
         depends_on:
             - app
             - app-octane
         networks:
-            - app
+            - sail
+        restart: unless-stopped
 
     redis:
         image: 'redis:8-alpine'
-        ports:
-            - '${FORWARD_REDIS_PORT:-6379}:6379'
         volumes:
-            - 'app-redis:/data'
+            - 'sail-redis:/data'
         networks:
-            - app
+            - sail
         healthcheck:
             test:
                 - CMD
@@ -52,11 +52,10 @@ services:
                 - ping
             retries: 3
             timeout: 5s
+        restart: unless-stopped
 
     mysql:
         image: 'mysql:9'
-        ports:
-            - '${FORWARD_DB_PORT:-3306}:3306'
         environment:
             MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
             MYSQL_ROOT_HOST: '%'
@@ -65,11 +64,12 @@ services:
             MYSQL_PASSWORD: '${DB_PASSWORD}'
             MYSQL_ALLOW_EMPTY_PASSWORD: 1
             MYSQL_EXTRA_OPTIONS: '${MYSQL_EXTRA_OPTIONS:-}'
+            TZ: 'Asia/Tbilisi'
         volumes:
-            - 'app-mysql:/var/lib/mysql'
-            - './vendor/laravel/sail/database/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
+            - 'sail-mysql:/var/lib/mysql'
+            - './.docker/mysql/create-testing-database.sh:/docker-entrypoint-initdb.d/10-create-testing-database.sh'
         networks:
-            - app
+            - sail
         healthcheck:
             test:
                 - CMD
@@ -81,6 +81,8 @@ services:
 
     phpmyadmin:
         image: phpmyadmin:5-apache
+        profiles:
+            - tools
         environment:
             PMA_HOST: mysql
             MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
@@ -89,18 +91,18 @@ services:
         ports:
             - '8080:80'
         networks:
-            - app
+            - sail
         depends_on:
             - mysql
 
 networks:
-    app:
+    sail:
         driver: bridge
 
 volumes:
-    app-redis:
+    sail-redis:
         driver: local
-    app-mysql:
+    sail-mysql:
         driver: local
     app-public:
         driver: local
