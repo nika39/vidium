@@ -3,6 +3,10 @@ FROM nginx:1.29-alpine
 # Install logrotate, crond (busybox provides crond by default on alpine, but let's be sure), and curl for healthcheck
 RUN apk add --no-cache logrotate curl tzdata openssl
 
+RUN cp /usr/share/zoneinfo/Asia/Tbilisi /etc/localtime && \
+    echo "Asia/Tbilisi" > /etc/timezone
+RUN apk del tzdata
+
 # Remove default nginx config
 RUN rm /etc/nginx/conf.d/default.conf
 
