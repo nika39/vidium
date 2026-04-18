@@ -44,7 +44,7 @@ class MetricSyncService
                 'site_id' => (int) $parts[1],
                 'p2p_bytes' => (int) ($data['p2p_bytes'] ?? 0),
                 'http_bytes' => (int) ($data['http_bytes'] ?? 0),
-                'recorded_at' => $parts[2],
+                'recorded_at' => str_replace('_', ' ', $parts[2]).':00:00',
                 'browser' => $parts[3],
                 'os' => $parts[4],
                 'player_version' => $parts[5],

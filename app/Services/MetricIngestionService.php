@@ -10,17 +10,17 @@ class MetricIngestionService
 {
     public function process(array $data): bool
     {
-        $siteId = Cache::remember('site_license:' . $data['license_key'], 3600, function () use ($data) {
+        $siteId = Cache::remember('site_license:'.$data['license_key'], 3600, function () use ($data) {
             $site = Site::where('license_key', $data['license_key'])->first();
 
             return $site?->isValid() ? $site->id : null;
         });
 
-        if (!$siteId) {
+        if (! $siteId) {
             return false;
         }
 
-        $hour = now()->format('Y-m-d H:00:00');
+        $hour = now()->format('Y-m-d_H');
 
         $redisKey = sprintf(
             'metrics:%s:%s:%s:%s:%s',
