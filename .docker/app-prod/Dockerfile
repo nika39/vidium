@@ -6,11 +6,6 @@ COPY --from=node:24-alpine /usr/local/lib/node_modules /usr/local/lib/node_modul
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
-# Why mlocati/install-php-extensions instead of docker-php-ext-install?
-# `docker-php-ext-install` requires you to manually install OS-level dependencies
-# (like libzip-dev, icu-dev) using apk, and you have to manually delete them after compiling.
-# The mlocati script automatically fetches the required OS C-headers, compiles the extension,
-# and cleans up (deletes) the OS dependencies to keep the image small.
 ADD https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions pdo_mysql bcmath zip intl
