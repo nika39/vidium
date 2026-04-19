@@ -50,3 +50,9 @@ COPY --from=builder /var/www/html/.env /var/www/html/.env
 RUN rm -rf tests package.json package-lock.json || true
 
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+
+RUN printf '#!/bin/sh\nset -e\nphp artisan optimize\nexec docker-php-entrypoint "$@"\n' > /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["php-fpm"]
