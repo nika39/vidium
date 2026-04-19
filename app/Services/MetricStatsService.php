@@ -43,23 +43,25 @@ class MetricStatsService
      */
     private function getOsBreakdown(Site $site): array
     {
+        $allowedOs = ['Windows', 'macOS', 'Linux', 'Android', 'iOS'];
+
         $osTotals = $site->metrics()
             ->where('recorded_at', '>=', now()->subHours(24))
+            ->whereIn('os', $allowedOs)
             ->selectRaw('os, COALESCE(SUM(p2p_bytes), 0) as total_p2p_bytes, COALESCE(SUM(http_bytes), 0) as total_http_bytes')
             ->groupBy('os')
             ->get();
 
-        $breakdown = [];
+        return $osTotals
+            ->mapWithKeys(function ($row) {
+                $p2p = (int) $row->total_p2p_bytes;
+                $total = $p2p + (int) $row->total_http_bytes;
 
-        foreach ($osTotals as $row) {
-            $p2p = (int) $row->total_p2p_bytes;
-            $http = (int) $row->total_http_bytes;
-            $total = $p2p + $http;
-
-            $breakdown[$row->os] = ($total > 0 ? round(($p2p / $total) * 100, 2) : 0) . '%';
-        }
-
-        return $breakdown;
+                return [$row->os => $total > 0 ? round(($p2p / $total) * 100, 2) : 0];
+            })
+            ->sortDesc()
+            ->map(fn ($percentage) => $percentage.'%')
+            ->all();
     }
 
     private function formatBytes(int $bytes): string
