@@ -19,7 +19,7 @@ return [
 
     'allowed_methods' => ['GET', 'POST'],
 
-    'allowed_origins' => [],
+    'allowed_origins' => ['https://test.localhost'],
 
     'allowed_origins_patterns' => ['#^https://mykadri\.(tv|me)$#'],
 
