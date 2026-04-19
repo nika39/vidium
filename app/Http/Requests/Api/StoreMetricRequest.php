@@ -21,16 +21,18 @@ class StoreMetricRequest extends FormRequest
      */
     public function rules(): array
     {
-        $maxVideoBitrateMbps = config('metrics.max_video_bitrate_mbps');
-        $pingInterval = config('metrics.ping_interval_seconds');
-        $prefetchMultiplier = config('metrics.prefetch_multiplier');
-        $maxBytes = ($maxVideoBitrateMbps / 8) * $pingInterval * 1024 * 1024 * $prefetchMultiplier;
+        // $maxVideoBitrateMbps = config('metrics.max_video_bitrate_mbps');
+        // $pingInterval = config('metrics.ping_interval_seconds');
+        // $prefetchMultiplier = config('metrics.prefetch_multiplier');
+        // $maxBytes = ($maxVideoBitrateMbps / 8) * $pingInterval * 1024 * 1024 * $prefetchMultiplier;
 
         return [
             'license_key' => ['required', 'string', 'max:255'],
 
-            'p2p_bytes' => ['required', 'integer', 'min:0', "max:{$maxBytes}"],
-            'http_bytes' => ['required', 'integer', 'min:0', "max:{$maxBytes}"],
+            'p2p_bytes' => ['required', 'integer', 'min:0'],
+            'http_bytes' => ['required', 'integer', 'min:0'],
+            // 'p2p_bytes' => ['required', 'integer', 'min:0', "max:{$maxBytes}"],
+            // 'http_bytes' => ['required', 'integer', 'min:0', "max:{$maxBytes}"],
 
             'browser' => ['nullable', 'string', 'max:50'],
             'os' => ['nullable', 'string', 'max:50'],
