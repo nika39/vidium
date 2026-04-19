@@ -2,7 +2,7 @@ x-app: &app-base
     build:
         context: .
         dockerfile: .docker/app-prod/Dockerfile
-    image: ghcr.io/nika39/vidium:dev
+    image: ghcr.io/nika39/vidium:latest
     depends_on:
         - redis
         - mysql
@@ -27,6 +27,7 @@ services:
     web:
         build:
             context: .docker/nginx
+        image: ghcr.io/nika39/vidium-web:latest
         ports:
             - '80:80'
             - '443:443'
