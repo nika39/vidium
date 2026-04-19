@@ -58,9 +58,8 @@ class AppServiceProvider extends ServiceProvider
     protected function configureRateLimiting(): void
     {
         RateLimiter::for('metric-ingestion', function (Request $request) {
-            return Limit::perSecond(
+            return Limit::perMinute(
                 maxAttempts: config('metrics.rate_limit.max_attempts'),
-                decaySeconds: config('metrics.rate_limit.decay_seconds'),
             )->by($request->ip());
         });
     }
