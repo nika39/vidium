@@ -38,6 +38,7 @@ services:
         volumes:
             - .:/var/www/html
             - ./.docker/nginx/templates-dev:/etc/nginx/templates
+            - ./.docker/nginx/certs:/etc/nginx/certs
         depends_on:
             - app
         networks:
