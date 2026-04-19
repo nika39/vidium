@@ -39,12 +39,12 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions pdo_mysql redis pcntl sockets bcmath zip intl opcache swoole-6.2.0
 
 COPY . /var/www/html/
-RUN if [ ! -f .env ]; then cp .env.example .env; fi
 
 # Copy only what we need from builder
 COPY --from=builder /var/www/html/vendor /var/www/html/vendor/
 COPY --from=builder /var/www/html/bootstrap/cache /var/www/html/bootstrap/cache/
 COPY --from=builder /var/www/html/public/build /var/www/html/public/build/
+COPY --from=builder /var/www/html/.env /var/www/html/.env
 
 # Explicitly remove unneeded files just in case they slipped past .dockerignore
 RUN rm -rf tests package.json package-lock.json || true
