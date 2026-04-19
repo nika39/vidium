@@ -39,6 +39,15 @@ class StoreMetricRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        if ($this->has('payload')) {
+            $decodedJson = base64_decode($this->input('payload'));
+            $dataArray = json_decode($decodedJson, true);
+
+            if (is_array($dataArray)) {
+                $this->merge($dataArray);
+            }
+        }
+
         $this->merge([
             'p2p_bytes' => $this->input('p2p_bytes', 0),
             'http_bytes' => $this->input('http_bytes', 0),
