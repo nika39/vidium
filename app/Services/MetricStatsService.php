@@ -56,13 +56,7 @@ class MetricStatsService
             $http = (int) $row->total_http_bytes;
             $total = $p2p + $http;
 
-            $breakdown[$row->os] = [
-                'total_p2p' => $this->formatBytes($p2p),
-                'total_http' => $this->formatBytes($http),
-                'total_traffic' => $this->formatBytes($total),
-                'p2p_ratio' => ($total > 0 ? round(($p2p / $total) * 100, 2) : 0).'%',
-                'http_ratio' => ($total > 0 ? round(($http / $total) * 100, 2) : 0).'%',
-            ];
+            $breakdown[$row->os] = ($total > 0 ? round(($p2p / $total) * 100, 2) : 0) . '%';
         }
 
         return $breakdown;
