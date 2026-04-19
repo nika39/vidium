@@ -5,7 +5,7 @@ use App\Providers\AppServiceProvider;
 use Illuminate\Support\Facades\Redis;
 
 beforeEach(function () {
-    Redis::flushall();
+    Redis::spy();
 
     $this->site = Site::factory()->create();
 });

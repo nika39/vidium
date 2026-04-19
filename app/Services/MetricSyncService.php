@@ -68,13 +68,19 @@ class MetricSyncService
 
         if (! empty($recordsToUpsert)) {
             DB::transaction(function () use ($recordsToUpsert) {
+                $isMysql = DB::getDriverName() === 'mysql';
+
                 foreach (array_chunk($recordsToUpsert, 1000) as $chunk) {
                     Metric::upsert(
                         $chunk,
                         ['site_id', 'recorded_at', 'browser', 'os', 'player_version'],
                         [
-                            'p2p_bytes' => DB::raw('metrics.p2p_bytes + VALUES(p2p_bytes)'),
-                            'http_bytes' => DB::raw('metrics.http_bytes + VALUES(http_bytes)'),
+                            'p2p_bytes' => DB::raw($isMysql
+                                ? 'metrics.p2p_bytes + VALUES(p2p_bytes)'
+                                : 'metrics.p2p_bytes + excluded.p2p_bytes'),
+                            'http_bytes' => DB::raw($isMysql
+                                ? 'metrics.http_bytes + VALUES(http_bytes)'
+                                : 'metrics.http_bytes + excluded.http_bytes'),
                         ]
                     );
                 }
