@@ -30,6 +30,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Prefetch Multiplier
+    |--------------------------------------------------------------------------
+    |
+    | P2P clients opportunistically download future segments when peers are
+    | available, causing reported bytes per ping to exceed the real-time
+    | video bitrate. This multiplier accounts for that burst behavior.
+    |
+    */
+
+    'prefetch_multiplier' => (int) env('METRICS_PREFETCH_MULTIPLIER', 4),
+
+    /*
+    |--------------------------------------------------------------------------
     | Rate Limiting
     |--------------------------------------------------------------------------
     |
@@ -41,7 +54,6 @@ return [
 
     'rate_limit' => [
         'max_attempts' => (int) env('METRICS_RATE_LIMIT_MAX', 10),
-        'decay_seconds' => (int) env('METRICS_RATE_LIMIT_DECAY', 60),
     ],
 
 ];

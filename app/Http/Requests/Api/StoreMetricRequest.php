@@ -23,7 +23,8 @@ class StoreMetricRequest extends FormRequest
     {
         $maxVideoBitrateMbps = config('metrics.max_video_bitrate_mbps');
         $pingInterval = config('metrics.ping_interval_seconds');
-        $maxBytes = ($maxVideoBitrateMbps / 8) * $pingInterval * 1024 * 1024;
+        $prefetchMultiplier = config('metrics.prefetch_multiplier');
+        $maxBytes = ($maxVideoBitrateMbps / 8) * $pingInterval * 1024 * 1024 * $prefetchMultiplier;
 
         return [
             'license_key' => ['required', 'string', 'max:255'],

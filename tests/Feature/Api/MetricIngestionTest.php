@@ -72,7 +72,8 @@ it('requires license_key', function () {
 it('rejects bytes exceeding max allowed value', function () {
     $maxBitrate = config('metrics.max_video_bitrate_mbps');
     $pingInterval = config('metrics.ping_interval_seconds');
-    $maxBytes = (int) (($maxBitrate / 8) * $pingInterval * 1024 * 1024);
+    $prefetchMultiplier = config('metrics.prefetch_multiplier');
+    $maxBytes = (int) (($maxBitrate / 8) * $pingInterval * 1024 * 1024 * $prefetchMultiplier);
 
     $response = $this->postJson('/api/metrics', [
         'license_key' => $this->site->license_key,
@@ -111,7 +112,7 @@ it('defaults optional fields to Unknown', function () {
 });
 
 it('respects rate limiting from config', function () {
-    config(['metrics.rate_limit.max_attempts' => 2, 'metrics.rate_limit.decay_seconds' => 60]);
+    config(['metrics.rate_limit.max_attempts' => 2]);
 
     // Re-register the rate limiter with new config
     app(AppServiceProvider::class, ['app' => app()])->boot();
@@ -130,7 +131,8 @@ it('respects rate limiting from config', function () {
 it('accepts bytes at exactly the max allowed value', function () {
     $maxBitrate = config('metrics.max_video_bitrate_mbps');
     $pingInterval = config('metrics.ping_interval_seconds');
-    $maxBytes = (int) (($maxBitrate / 8) * $pingInterval * 1024 * 1024);
+    $prefetchMultiplier = config('metrics.prefetch_multiplier');
+    $maxBytes = (int) (($maxBitrate / 8) * $pingInterval * 1024 * 1024 * $prefetchMultiplier);
 
     $response = $this->postJson('/api/metrics', [
         'license_key' => $this->site->license_key,
@@ -145,9 +147,10 @@ it('calculates max bytes based on config values', function () {
     config([
         'metrics.max_video_bitrate_mbps' => 10,
         'metrics.ping_interval_seconds' => 20,
+        'metrics.prefetch_multiplier' => 2,
     ]);
 
-    $maxBytes = (int) ((10 / 8) * 20 * 1024 * 1024);
+    $maxBytes = (int) ((10 / 8) * 20 * 1024 * 1024 * 2);
 
     $this->postJson('/api/metrics', [
         'license_key' => $this->site->license_key,
