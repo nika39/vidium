@@ -4,17 +4,18 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreMetricRequest;
+use App\Models\Site;
 use App\Services\MetricIngestionService;
+use App\Services\MetricStatsService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MetricController extends Controller
 {
-    protected MetricIngestionService $metricService;
-
-    public function __construct(MetricIngestionService $metricService)
-    {
-        $this->metricService = $metricService;
-    }
+    public function __construct(
+        protected MetricIngestionService $metricService,
+        protected MetricStatsService $statsService,
+    ) {}
 
     /**
      * Display a listing of the resource.
@@ -22,6 +23,14 @@ class MetricController extends Controller
     public function index()
     {
         //
+    }
+
+    /**
+     * Get traffic stats for a site.
+     */
+    public function show(Site $site): JsonResponse
+    {
+        return response()->json($this->statsService->getStats($site));
     }
 
     /**
@@ -33,19 +42,11 @@ class MetricController extends Controller
 
         $success = $this->metricService->process($data);
 
-        if (!$success) {
+        if (! $success) {
             return response()->json(['error' => 'Invalid, expired, or inactive license'], 401);
         }
 
         return response()->json(['status' => 'ok']);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
     }
 
     /**

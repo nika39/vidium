@@ -10,3 +10,6 @@ Route::get('/', function () {
 Route::post('metrics', [MetricController::class, 'store'])
     ->middleware('throttle:metric-ingestion')
     ->name('metrics.store');
+
+Route::get('metrics/{site}', [MetricController::class, 'show'])
+    ->name('metrics.show');
