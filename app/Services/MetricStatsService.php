@@ -9,7 +9,7 @@ class MetricStatsService
     /**
      * Get traffic stats for a site.
      *
-     * @return array{domain: string, total_p2p: string, total_http: string, total_traffic: string, p2p_ratio: string, http_ratio: string}
+     * @return array{domain: string, total_p2p: string, total_http: string, total_traffic: string, p2p_ratio: string, http_ratio: string, os_breakdown: array<string, array{total_p2p: string, total_http: string, total_traffic: string, p2p_ratio: string, http_ratio: string}>}
      */
     public function getStats(Site $site): array
     {
@@ -32,7 +32,40 @@ class MetricStatsService
             'total_traffic' => $this->formatBytes($totalBytes),
             'p2p_ratio' => $p2pPercentage.'%',
             'http_ratio' => $httpPercentage.'%',
+            'os_breakdown' => $this->getOsBreakdown($site),
         ];
+    }
+
+    /**
+     * Get P2P/HTTP ratio breakdown by operating system.
+     *
+     * @return array<string, array{total_p2p: string, total_http: string, total_traffic: string, p2p_ratio: string, http_ratio: string}>
+     */
+    private function getOsBreakdown(Site $site): array
+    {
+        $osTotals = $site->metrics()
+            ->where('recorded_at', '>=', now()->subHours(24))
+            ->selectRaw('os, COALESCE(SUM(p2p_bytes), 0) as total_p2p_bytes, COALESCE(SUM(http_bytes), 0) as total_http_bytes')
+            ->groupBy('os')
+            ->get();
+
+        $breakdown = [];
+
+        foreach ($osTotals as $row) {
+            $p2p = (int) $row->total_p2p_bytes;
+            $http = (int) $row->total_http_bytes;
+            $total = $p2p + $http;
+
+            $breakdown[$row->os] = [
+                'total_p2p' => $this->formatBytes($p2p),
+                'total_http' => $this->formatBytes($http),
+                'total_traffic' => $this->formatBytes($total),
+                'p2p_ratio' => ($total > 0 ? round(($p2p / $total) * 100, 2) : 0).'%',
+                'http_ratio' => ($total > 0 ? round(($http / $total) * 100, 2) : 0).'%',
+            ];
+        }
+
+        return $breakdown;
     }
 
     private function formatBytes(int $bytes): string

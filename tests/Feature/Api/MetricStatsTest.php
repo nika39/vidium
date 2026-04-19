@@ -70,5 +70,53 @@ it('returns zero stats when site has no metrics', function () {
             'total_traffic' => '0 B',
             'p2p_ratio' => '0%',
             'http_ratio' => '0%',
+            'os_breakdown' => [],
+        ]);
+});
+
+it('returns p2p and http ratio breakdown by operating system', function () {
+    $site = Site::factory()->create();
+
+    Metric::factory()->for($site)->create([
+        'os' => 'Windows',
+        'p2p_bytes' => 8_000_000,
+        'http_bytes' => 2_000_000,
+        'recorded_at' => now()->subHours(1),
+    ]);
+
+    Metric::factory()->for($site)->create([
+        'os' => 'macOS',
+        'p2p_bytes' => 3_000_000,
+        'http_bytes' => 7_000_000,
+        'recorded_at' => now()->subHours(1),
+    ]);
+
+    Metric::factory()->for($site)->create([
+        'os' => 'Windows',
+        'p2p_bytes' => 2_000_000,
+        'http_bytes' => 8_000_000,
+        'recorded_at' => now()->subHours(1),
+    ]);
+
+    $response = $this->getJson("/api/metrics/{$site->id}");
+
+    $response->assertSuccessful()
+        ->assertJson([
+            'os_breakdown' => [
+                'Windows' => [
+                    'total_p2p' => '9.54 MB',
+                    'total_http' => '9.54 MB',
+                    'total_traffic' => '19.07 MB',
+                    'p2p_ratio' => '50%',
+                    'http_ratio' => '50%',
+                ],
+                'macOS' => [
+                    'total_p2p' => '2.86 MB',
+                    'total_http' => '6.68 MB',
+                    'total_traffic' => '9.54 MB',
+                    'p2p_ratio' => '30%',
+                    'http_ratio' => '70%',
+                ],
+            ],
         ]);
 });
