@@ -22,6 +22,8 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi
 RUN composer dump-autoload
 
 RUN npm ci
+RUN php artisan key:generate --force
+RUN php artisan wayfinder:generate
 RUN npm run build
 
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
