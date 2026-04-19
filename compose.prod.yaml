@@ -86,8 +86,8 @@ services:
 
     phpmyadmin:
         image: phpmyadmin:5-apache
-        profiles:
-            - tools
+        # profiles:
+        #     - tools
         environment:
             PMA_HOST: mysql
             MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
