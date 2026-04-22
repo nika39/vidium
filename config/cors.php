@@ -17,7 +17,7 @@ return [
 
     'paths' => ['api/', 'api/*'],
 
-    'allowed_methods' => ['GET', 'POST'],
+    'allowed_methods' => ['GET', 'POST', 'OPTIONS'],
 
     'allowed_origins' => ['https://test.localhost'],
 
