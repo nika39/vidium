@@ -28,13 +28,13 @@ it('returns last 24h traffic stats for a site', function () {
         ]);
 });
 
-it('excludes metrics older than 24 hours', function () {
+it('excludes metrics older than 30 days', function () {
     $site = Site::factory()->create(['domain' => 'example.com']);
 
     Metric::factory()->for($site)->create([
         'p2p_bytes' => 5_000_000,
         'http_bytes' => 5_000_000,
-        'recorded_at' => now()->subHours(25),
+        'recorded_at' => now()->subDays(31),
     ]);
 
     Metric::factory()->for($site)->create([
@@ -103,20 +103,8 @@ it('returns p2p and http ratio breakdown by operating system', function () {
     $response->assertSuccessful()
         ->assertJson([
             'os_breakdown' => [
-                'Windows' => [
-                    'total_p2p' => '9.54 MB',
-                    'total_http' => '9.54 MB',
-                    'total_traffic' => '19.07 MB',
-                    'p2p_ratio' => '50%',
-                    'http_ratio' => '50%',
-                ],
-                'macOS' => [
-                    'total_p2p' => '2.86 MB',
-                    'total_http' => '6.68 MB',
-                    'total_traffic' => '9.54 MB',
-                    'p2p_ratio' => '30%',
-                    'http_ratio' => '70%',
-                ],
+                'Windows' => '50%',
+                'macOS' => '30%',
             ],
         ]);
 });

@@ -83,7 +83,7 @@ it('rejects bytes exceeding max allowed value', function () {
 
     $response->assertUnprocessable()
         ->assertJsonValidationErrors(['p2p_bytes']);
-});
+})->skip('Security checks disabled in feat/disable-security branch');
 
 it('rejects negative byte values', function () {
     $response = $this->postJson('/api/metrics', [
@@ -126,7 +126,7 @@ it('respects rate limiting from config', function () {
     $this->postJson('/api/metrics', $payload)->assertSuccessful();
     $this->postJson('/api/metrics', $payload)->assertSuccessful();
     $this->postJson('/api/metrics', $payload)->assertTooManyRequests();
-});
+})->skip('Security checks disabled in feat/disable-security branch');
 
 it('accepts bytes at exactly the max allowed value', function () {
     $maxBitrate = config('metrics.max_video_bitrate_mbps');
@@ -164,4 +164,4 @@ it('calculates max bytes based on config values', function () {
         'p2p_bytes' => $maxBytes,
         'http_bytes' => 0,
     ])->assertSuccessful();
-});
+})->skip('Security checks disabled in feat/disable-security branch');

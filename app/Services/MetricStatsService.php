@@ -24,7 +24,7 @@ class MetricStatsService
     public function getStats(Site $site): array
     {
         $totals = $site->metrics()
-            ->where('recorded_at', '>=', now()->subHours(24))
+            ->where('recorded_at', '>=', now()->subDays(30))
             ->selectRaw('COALESCE(SUM(p2p_bytes), 0) as total_p2p_bytes, COALESCE(SUM(http_bytes), 0) as total_http_bytes')
             ->first();
 
@@ -40,8 +40,8 @@ class MetricStatsService
             'total_p2p' => $this->formatBytes($totalP2pBytes),
             'total_http' => $this->formatBytes($totalHttpBytes),
             'total_traffic' => $this->formatBytes($totalBytes),
-            'p2p_ratio' => $p2pPercentage.'%',
-            'http_ratio' => $httpPercentage.'%',
+            'p2p_ratio' => $p2pPercentage . '%',
+            'http_ratio' => $httpPercentage . '%',
             'os_breakdown' => $this->getOsBreakdown($site),
             'daily_breakdown' => $this->getDailyBreakdown($site),
             'hourly_breakdown' => $this->getHourlyBreakdown($site),
@@ -72,7 +72,7 @@ class MetricStatsService
                 return [$row->os => $total > 0 ? round(($p2p / $total) * 100, 2) : 0];
             })
             ->sortDesc()
-            ->map(fn ($percentage) => $percentage.'%')
+            ->map(fn($percentage) => $percentage . '%')
             ->all();
     }
 
@@ -83,9 +83,14 @@ class MetricStatsService
      */
     private function getHourlyBreakdown(Site $site): array
     {
+        $isSqlite = $site->getConnection()->getDriverName() === 'sqlite';
+
+        $hourLabel = $isSqlite ? "strftime('%d.%m %H:00', recorded_at)" : 'DATE_FORMAT(recorded_at, "%d.%m %H:00")';
+        $fullHour = $isSqlite ? "strftime('%Y-%m-%d %H:00', recorded_at)" : 'DATE_FORMAT(recorded_at, "%Y-%m-%d %H:00")';
+
         $hourlyTotals = $site->metrics()
-            ->where('recorded_at', '>=', now()->subHours(24))
-            ->selectRaw('DATE_FORMAT(recorded_at, "%d.%m %H:00") as hour_label, DATE_FORMAT(recorded_at, "%Y-%m-%d %H:00") as full_hour, COALESCE(SUM(p2p_bytes), 0) as total_p2p_bytes, COALESCE(SUM(http_bytes), 0) as total_http_bytes')
+            ->where('recorded_at', '>=', now()->subHours(36))
+            ->selectRaw("{$hourLabel} as hour_label, {$fullHour} as full_hour, COALESCE(SUM(p2p_bytes), 0) as total_p2p_bytes, COALESCE(SUM(http_bytes), 0) as total_http_bytes")
             ->groupBy('full_hour', 'hour_label')
             ->orderBy('full_hour')
             ->get();
@@ -97,7 +102,7 @@ class MetricStatsService
 
                 return [$row->hour_label => $total > 0 ? round(($p2p / $total) * 100, 2) : 0];
             })
-            ->map(fn ($percentage) => $percentage.'%')
+            ->map(fn($percentage) => $percentage . '%')
             ->all();
     }
 
@@ -108,9 +113,14 @@ class MetricStatsService
      */
     private function getDailyBreakdown(Site $site): array
     {
+        $isSqlite = $site->getConnection()->getDriverName() === 'sqlite';
+
+        $dayLabel = $isSqlite ? "strftime('%d.%m', recorded_at)" : 'DATE_FORMAT(recorded_at, "%d.%m")';
+        $fullDay = $isSqlite ? "strftime('%Y-%m-%d', recorded_at)" : 'DATE_FORMAT(recorded_at, "%Y-%m-%d")';
+
         $dailyTotals = $site->metrics()
             ->where('recorded_at', '>=', now()->subDays(30))
-            ->selectRaw('DATE_FORMAT(recorded_at, "%d.%m") as day_label, DATE_FORMAT(recorded_at, "%Y-%m-%d") as full_day, COALESCE(SUM(p2p_bytes), 0) as total_p2p_bytes, COALESCE(SUM(http_bytes), 0) as total_http_bytes')
+            ->selectRaw("{$dayLabel} as day_label, {$fullDay} as full_day, COALESCE(SUM(p2p_bytes), 0) as total_p2p_bytes, COALESCE(SUM(http_bytes), 0) as total_http_bytes")
             ->groupBy('full_day', 'day_label')
             ->orderBy('full_day')
             ->get();
@@ -122,7 +132,7 @@ class MetricStatsService
 
                 return [$row->day_label => $total > 0 ? round(($p2p / $total) * 100, 2) : 0];
             })
-            ->map(fn ($percentage) => $percentage.'%')
+            ->map(fn($percentage) => $percentage . '%')
             ->all();
     }
 
@@ -136,6 +146,6 @@ class MetricStatsService
         $power = (int) floor(log($bytes, 1024));
         $power = min($power, count($units) - 1);
 
-        return round($bytes / (1024 ** $power), 2).' '.$units[$power];
+        return round($bytes / (1024 ** $power), 2) . ' ' . $units[$power];
     }
 }
