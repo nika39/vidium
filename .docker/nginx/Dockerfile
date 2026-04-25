@@ -20,8 +20,18 @@ RUN unlink /var/log/nginx/access.log && \
     chown nginx:nginx /var/log/nginx/access.log /var/log/nginx/error.log
 
 RUN mkdir -p /etc/nginx/certs
+
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY templates-prod /etc/nginx/templates
-COPY logrotate.conf /etc/logrotate.d/nginx
+
+RUN mkdir -p /var/log/nginx/logs.d /var/log/nginx/errors.d
+RUN touch /var/log/nginx/logs.d/my_access.log /var/log/nginx/errors.d/my_error.log
+
+RUN chmod 644 /etc/logrotate.d/nginx
+RUN touch /var/lib/logrotate.status
+RUN chmod 600 /var/lib/logrotate.status
+
+RUN echo "0 * * * * logrotate -v /etc/logrotate.conf" >> /etc/crontabs/root
 
 # Setup entrypoint script for starting background crond and certs
 COPY entrypoint.sh /docker-entrypoint.d/99-start-container.sh

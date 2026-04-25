@@ -52,6 +52,8 @@ server {
 
     # API routes → Laravel Octane (Swoole HTTP server)
     location /api/ {
+        access_log off; log_not_found off;
+
         proxy_pass         http://app-octane:8000;
         proxy_http_version 1.1;
         proxy_set_header   Host              $http_host;
@@ -81,4 +83,8 @@ server {
     location ~ /\.(?!well-known).* {
         deny all;
     }
+
+
+    error_log /var/log/nginx/errors.d/my_error.log;
+    access_log /var/log/nginx/logs.d/my_access.log main;
 }
