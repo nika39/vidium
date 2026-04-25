@@ -31,6 +31,7 @@ services:
         ports:
             - '80:80'
             - '443:443'
+            - '443:443/udp'
         environment:
             - SERVER_NAME=${SERVER_NAME:-vidium.localhost}
             - SSL_DOMAIN=${SSL_DOMAIN:-vidium.localhost}
