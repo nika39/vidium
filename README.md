@@ -8,7 +8,7 @@ This platform provides website owners (clients) with a real-time dashboard to mo
 
 ## ✨ Key Features
 
-- **High-Throughput Data Ingestion:** Capable of handling thousands of requests per minute using Laravel Octane and Redis pipelining.
+- **High-Throughput Data Ingestion:** Capable of handling thousands of requests per second using a specialized, high-performance ingestion microservice and Redis pipelining.
 - **Smart Data Aggregation:** Uses time-series dimensional modeling to aggregate millions of pings into compact, hourly database records.
 - **Real-Time B2B Dashboard:** A responsive, interactive dashboard built with React and Inertia.js, featuring time-series charts, browser/OS distribution, and bandwidth savings calculators.
 - **Automated Data Lifecycle:** Implements background pruning of historical data to maintain optimal database size and query performance.
@@ -16,7 +16,7 @@ This platform provides website owners (clients) with a real-time dashboard to mo
 
 ## 🛠️ Tech Stack
 
-- **Backend:** Laravel 13, Laravel Octane
+- **Backend:** Laravel 13, Bun (Metrics Microservice)
 - **Frontend:** React.js, Inertia.js, Tailwind CSS
 - **Database:** MySQL (Structured for Time-Series Data)
 - **In-Memory Store:** Redis (For buffering, pipelining, and caching)
@@ -25,7 +25,7 @@ This platform provides website owners (clients) with a real-time dashboard to mo
 
 To prevent database bottlenecking from continuous API requests, the system implements a **Buffer-and-Batch** architecture:
 
-1. **Receive & Validate:** The API receives payload data from the client's video player. A _Thin Controller, Fat Service_ pattern delegates the data to an ingestion service.
+1. **Receive & Validate:** A dedicated ingestion microservice receives telemetry data. It validates licenses and payloads against a high-speed cache before processing.
 2. **Redis Buffer (Pipeline):** Data is NOT written directly to MySQL. Instead, metrics are atomically incremented in Redis (`hincrby`) using time-bound dimensional keys (e.g., `SiteID:Hour:Browser:OS`).
 3. **Background Sync:** A scheduled background job runs periodically to flush the Redis buffer.
 4. **Bulk Upsert:** The flushed data is sent to MySQL using a Bulk Upsert (`ON DUPLICATE KEY UPDATE`). The database natively aggregates the numerical values, resulting in a massively reduced row count and lightning-fast read queries for the Dashboard.
