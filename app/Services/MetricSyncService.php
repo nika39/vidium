@@ -12,11 +12,18 @@ class MetricSyncService
 {
     public function sync(): int
     {
+        Log::info('Metric sync started');
+
         $keys = Redis::smembers('active_metric_keys');
 
         if (empty($keys)) {
+            Log::info('No active metric keys found in Redis');
+
             return 0;
         }
+
+        $keyCount = count($keys);
+        Log::info("Found {$keyCount} active metric keys to sync");
 
         $redisData = Redis::pipeline(function ($pipe) use ($keys) {
             foreach ($keys as $key) {
@@ -66,7 +73,9 @@ class MetricSyncService
             ));
         }
 
-        if (! empty($recordsToUpsert)) {
+        $upsertCount = count($recordsToUpsert);
+
+        if ($upsertCount > 0) {
             DB::transaction(function () use ($recordsToUpsert) {
                 $isMysql = DB::getDriverName() === 'mysql';
 
@@ -85,6 +94,8 @@ class MetricSyncService
                     );
                 }
             });
+
+            Log::info("Successfully synced {$upsertCount} records to database");
         }
 
         Redis::pipeline(function ($pipe) use ($keys) {
@@ -94,6 +105,8 @@ class MetricSyncService
             }
         });
 
-        return count($recordsToUpsert);
+        Log::info('Metric sync completed');
+
+        return $upsertCount;
     }
 }

@@ -8,8 +8,9 @@ TAG       := $(shell date +%Y%m%d%H%M%S)
 
 IMAGE_APP := $(REGISTRY)/$(GIT_USER)/$(GIT_REPO)
 IMAGE_WEB := $(REGISTRY)/$(GIT_USER)/$(GIT_REPO)-web
+IMAGE_METRIC_INGESTION := $(REGISTRY)/$(GIT_USER)/$(GIT_REPO)-metric-ingestion
 
-all: app web
+all: app web metric-ingestion
 
 app:
 	@echo "🚀 Building and pushing app image..."
@@ -28,3 +29,12 @@ web:
 		-t $(IMAGE_WEB):$(TAG) \
 		--push .docker/nginx
 	@echo "✅ Web image pushed: $(IMAGE_WEB):$(TAG)"
+
+metric-ingestion:
+	@echo "🚀 Building and pushing web image..."
+	docker buildx build --platform $(PLATFORM) \
+		-f .docker/metrics/Dockerfile \
+		-t $(IMAGE_METRIC_INGESTION):latest \
+		-t $(IMAGE_METRIC_INGESTION):$(TAG) \
+		--push .docker/metrics
+	@echo "✅ Web image pushed: $(IMAGE_METRIC_INGESTION):$(TAG)"

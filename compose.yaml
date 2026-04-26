@@ -23,6 +23,43 @@ services:
             - redis
             - mysql
 
+    metric-ingestion:
+        build:
+            context: './.docker/metrics'
+            dockerfile: Dockerfile
+        command: bun --watch server.ts
+        ports:
+            - '${BUN_METRICS_PORT:-3000}:3000'
+        environment:
+            PORT: 3000
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+            REDIS_PASSWORD: '${REDIS_PASSWORD:-}'
+            REDIS_DB: 0
+            REDIS_PREFIX: 'vidium-database-'
+            MYSQL_HOST: mysql
+            MYSQL_PORT: 3306
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            TZ: 'Asia/Tbilisi'
+        volumes:
+            - './.docker/metrics:/app'
+            - 'metric-ingestion-modules:/app/node_modules'
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - bun
+                - "-e"
+                - "try { const r = await fetch('http://localhost:3000/health'); process.exit(r.ok ? 0 : 1); } catch { process.exit(1); }"
+            retries: 3
+            timeout: 5s
+        depends_on:
+            - redis
+            - mysql
+
     web:
         build:
             context: .docker/nginx
@@ -110,4 +147,6 @@ volumes:
     sail-redis:
         driver: local
     sail-mysql:
+        driver: local
+    metric-ingestion-modules:
         driver: local

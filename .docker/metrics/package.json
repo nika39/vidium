@@ -1,0 +1,16 @@
+{
+  "name": "vidium-metrics",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch server.ts",
+    "start": "bun server.ts"
+  },
+  "dependencies": {
+    "ioredis": "^5.6.1",
+    "mysql2": "^3.14.1"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}

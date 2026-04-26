@@ -7,9 +7,9 @@ Route::get('/', function () {
     return response()->json(['status' => 'ok']);
 });
 
-Route::post('metrics', [MetricController::class, 'store'])
-    // ->middleware('throttle:metric-ingestion')
-    ->name('metrics.store');
+// Route::post('metrics', [MetricController::class, 'store'])
+//     // ->middleware('throttle:metric-ingestion')
+//     ->name('metrics.store');
 
 Route::get('metrics/{site}', [MetricController::class, 'show'])
     ->name('metrics.show');

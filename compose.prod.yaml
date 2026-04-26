@@ -4,8 +4,10 @@ x-app: &app-base
         dockerfile: .docker/app-prod/Dockerfile
     image: ghcr.io/nika39/vidium:latest
     depends_on:
-        - redis
-        - mysql
+        redis:
+            condition: service_started
+        mysql:
+            condition: service_healthy
     networks:
         - sail
     restart: unless-stopped
@@ -15,14 +17,48 @@ services:
         <<: *app-base
         volumes:
             - app-public:/var/www/html/public
-
-    app-octane:
-        <<: *app-base
-        command: php artisan octane:start --server=swoole --host=0.0.0.0 --port=8000 --workers=auto
+            - ./.env:/var/www/html/.env
 
     app-scheduler:
         <<: *app-base
+        volumes:
+            - ./.env:/var/www/html/.env
         command: php artisan schedule:work
+
+    metric-ingestion:
+        build:
+            context: ./.docker/metrics
+            dockerfile: Dockerfile
+        image: ghcr.io/nika39/vidium-metric-ingestion:latest
+        environment:
+            PORT: 3000
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
+            REDIS_PASSWORD: '${REDIS_PASSWORD:-}'
+            REDIS_DB: 0
+            REDIS_PREFIX: '${REDIS_PREFIX:-vidium-database-}'
+            MYSQL_HOST: mysql
+            MYSQL_PORT: 3306
+            MYSQL_DATABASE: '${DB_DATABASE}'
+            MYSQL_USER: '${DB_USERNAME}'
+            MYSQL_PASSWORD: '${DB_PASSWORD}'
+            TZ: 'Asia/Tbilisi'
+        depends_on:
+            redis:
+                condition: service_started
+            mysql:
+                condition: service_healthy
+        networks:
+            - sail
+        healthcheck:
+            test:
+                - CMD
+                - bun
+                - '-e'
+                - "try { const r = await fetch('http://localhost:3000/health'); process.exit(r.ok ? 0 : 1); } catch { process.exit(1); }"
+            retries: 3
+            timeout: 5s
+        restart: unless-stopped
 
     web:
         build:
@@ -30,17 +66,17 @@ services:
         image: ghcr.io/nika39/vidium-web:latest
         ports:
             - '80:80'
-            - '443:443'
-            - '443:443/udp'
+            - '8443:443'
         environment:
             - SERVER_NAME=${SERVER_NAME:-vidium.localhost}
             - SSL_DOMAIN=${SSL_DOMAIN:-vidium.localhost}
             - SSL_ALT_NAME=${SSL_ALT_NAME:-DNS:vidium.localhost}
+            - VALID_ORIGINS=${VALID_ORIGINS:-test\.localhost}
         volumes:
             - app-public:/var/www/html/public
         depends_on:
             - app
-            - app-octane
+            - metric-ingestion
         networks:
             - sail
         restart: unless-stopped
