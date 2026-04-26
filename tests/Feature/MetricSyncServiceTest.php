@@ -30,6 +30,7 @@ it('syncs metrics only for existing sites and skips orphaned site IDs', function
         ->with(Mockery::type('Closure'))
         ->andReturn([null, null, null, null]);
 
+    Log::shouldReceive('info');
     Log::shouldReceive('warning')
         ->once()
         ->with('Skipping metrics for non-existent site ID: 99999');
@@ -46,6 +47,8 @@ it('returns zero when there are no active metric keys', function () {
         ->once()
         ->with('active_metric_keys')
         ->andReturn([]);
+
+    Log::shouldReceive('info');
 
     $synced = app(MetricSyncService::class)->sync();
 
