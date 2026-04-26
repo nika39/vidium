@@ -7,11 +7,14 @@ The project is a B2B analytics platform designed for clients (websites) utilizin
 
 ## Data Ingestion Pipeline
 
-The system implements a Thin Controller, Fat Service architectural pattern. The HTTP controller delegates the payload to the MetricIngestionService.
+The system offloads high-traffic metrics ingestion to a standalone **Bun** microservice. This ensures the Laravel application remains responsive under high load.
 
-- Incoming data is never written directly to MySQL.
-- A time-bound unique key (Time Bucket) is generated, containing the dimensions: Site ID, Hour, Browser, OS, Player Version.
-- The system uses Redis::pipeline() to execute multiple operations in a single network round-trip: hincrby: Atomically adds the incoming bytes and ping counts to the existing Hash. sadd: Appends the unique key to an active metrics list (a Redis Set), which is subsequently used by the background synchronizer.
+- Incoming data is handled by the Bun server (`.docker/metrics/server.ts`), which validates licenses against MySQL with an in-memory cache.
+- Data is never written directly to MySQL during ingestion.
+- A time-bound unique key (Time Bucket) is generated: `metrics:{siteId}:{YYYY-MM-DD_HH}:{browser}:{os}:{player_version}`.
+- The system uses Redis pipelining to execute operations atomically:
+    - `hincrby`: Adds incoming bytes to the existing Hash.
+    - `sadd`: Appends the unique key to `active_metric_keys` (a Redis Set) for the Laravel background synchronizer.
 
 ## Foundational Context
 
@@ -21,7 +24,9 @@ This application is a Laravel application and its main Laravel ecosystems packag
 - inertiajs/inertia-laravel (INERTIA_LARAVEL) - v2
 - laravel/fortify (FORTIFY) - v1
 - laravel/framework (LARAVEL) - v13
-- laravel/octane (OCTANE) - v2
+- bun - v1
+- ioredis - v5
+- mysql2 - v3
 - laravel/prompts (PROMPTS) - v0
 - laravel/wayfinder (WAYFINDER) - v0
 - laravel/boost (BOOST) - v2
@@ -234,23 +239,17 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 - If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
 
-=== octane/core rules ===
+=== bun/metrics rules ===
 
-# Octane
+# Bun Metrics Microservice
 
-- Octane boots the application once and reuses it across requests, so singletons persist between requests.
-- The Laravel container's `scoped` method may be used as a safe alternative to `singleton`.
-- Never inject the container, request, or config repository into a singleton's constructor; use a resolver closure or `bind()` instead:
+The high-traffic metrics ingestion is offloaded from Laravel to a standalone Bun microservice located in `.docker/metrics/server.ts`.
 
-```php
-// Bad
-$this->app->singleton(Service::class, fn (Application $app) => new Service($app['request']));
-
-// Good
-$this->app->singleton(Service::class, fn () => new Service(fn () => request()));
-```
-
-- Never append to static properties, as they accumulate in memory across requests.
+- **High Performance**: Designed to handle high RPS with minimal latency and resource consumption.
+- **Redis Compatibility**: Must maintain exact Redis key structure (`metrics:{siteId}:{hour}:{browser}:{os}:{player_version}`) so Laravel's `MetricSyncService` can process it.
+- **License Caching**: Uses an in-memory `Map` with a 1-hour TTL to cache license lookups from MySQL.
+- **Payload Handling**: Supports both direct JSON payloads and Base64-encoded `payload` envelopes (common in browser environments).
+- **Graceful Shutdown**: Always ensure Redis and MySQL connections are closed on `SIGTERM`.
 
 === wayfinder/core rules ===
 
